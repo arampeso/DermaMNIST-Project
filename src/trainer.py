@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 from src.args import get_args
 from src.utils import compute_metrics, plot_metrics
 
@@ -66,12 +67,18 @@ def train_and_validate(
     best_val_loss = float("inf")
     best_epoch = 0
 
-    for epoch in range(epochs):
+    epoch_progress = tqdm(
+        range(epochs),
+        desc=f"Split {split} epochs",
+        leave=False,
+        position=1
+    )
+    for epoch in epoch_progress:
         model.train()
         running_loss = 0.0
         all_labels, all_probs = [], []
 
-        for batch in train_loader:
+        for batch_index, batch in enumerate(train_loader):
             inputs = batch["xray"].to(device)
             labels = batch["target"].to(device)
 
@@ -84,6 +91,7 @@ def train_and_validate(
             running_loss += loss.item()
             all_labels.append(labels.cpu().numpy())
             all_probs.append(torch.softmax(outputs, dim=1).detach().cpu().numpy())
+            epoch_progress.set_postfix(loss=f"{running_loss / (batch_index + 1):.4f}")
 
         train_loss = running_loss / len(train_loader)
         train_bal_acc, train_auc, train_ap = compute_metrics(
@@ -99,12 +107,10 @@ def train_and_validate(
         ):
             history[key].append(value)
 
-        print("\n")
-        print(f"------- Epoch {epoch + 1}/{epochs} -------")
-        print("Training   - Loss: {:.4f} | BalAcc: {:.4f} | ROC-AUC: {:.4f} | AP: {:.4f}".format(
-            train_loss, train_bal_acc, train_auc, train_ap))
-        print("Validation - Loss: {:.4f} | BalAcc: {:.4f} | ROC-AUC: {:.4f} | AP: {:.4f}".format(
-            val_loss, val_bal_acc, val_auc, val_ap))
+        epoch_progress.set_postfix(
+            loss=f"{train_loss:.4f}",
+            val_loss=f"{val_loss:.4f}"
+        )
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
