@@ -8,8 +8,8 @@ from medmnist import DermaMNIST
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
 
-SEED = 42
-IMAGE_SIZE = 64  # Alternatively: 28, 128, or 224
+SEED = 59
+IMAGE_SIZE = 128  # Alternatively: 28, 128, or 224
 
 DATA_DIR = Path("data")
 IMAGE_DIR = DATA_DIR / "images"
@@ -153,6 +153,7 @@ def main():
     print(f"Test images: {len(test_indices)}")
     print(f"Image directory: {IMAGE_DIR.resolve()}")
     print(f"Split directory: {SPLIT_DIR.resolve()}")
+    print()
 
 
 if __name__ == "__main__":
