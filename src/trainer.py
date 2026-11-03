@@ -2,17 +2,16 @@ import os
 import numpy as np
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 from src.args import get_args
-from src.utils import compute_metrics, plot_metrics
+from src.utils import compute_metrics
 
 args = get_args()
 
 def validate_model(model, val_loader, criterion, device):
     """ 
     Validates the model on the validation set and returns:
-    Loss, balanced accuracy, ROC-AUC and average precision.
+    Loss, balanced accuracy, macro F1, ROC-AUC and average precision.
     """
     model.eval()
     running_loss = 0.0
@@ -31,9 +30,11 @@ def validate_model(model, val_loader, criterion, device):
             all_probs.append(torch.softmax(outputs, dim=1).cpu().numpy())
 
     val_loss = running_loss / len(val_loader)
-    bal_acc, auc, ap = compute_metrics(np.concatenate(all_labels), np.concatenate(all_probs))
+    bal_acc, f1, auc, ap = compute_metrics(
+        np.concatenate(all_labels), np.concatenate(all_probs)
+    )
 
-    return val_loss, bal_acc, auc, ap
+    return val_loss, bal_acc, f1, auc, ap
 
 
 def train_and_validate(
@@ -49,22 +50,16 @@ def train_and_validate(
 ):
     """ 
     Trains the model, validates after every epoch, saves the best model
-    and saves the plots (one for training and one for validation).
-    Plots:
-    - Loss over epoch
-    - Balanced Accuracy over epoch
-    - ROC-AUC over epoch
-    - Average Precision over epoch
+    and returns its loss history.
     """
     os.makedirs(out_dir, exist_ok=True)
 
     history = {
-        "train_loss": [], "val_loss": [],
-        "train_bal_acc": [], "val_bal_acc": [],
-        "train_auc": [], "val_auc": [],
-        "train_ap": [], "val_ap": [],
+        "train_loss": [],
+        "val_loss": [],
     }
     best_val_loss = float("inf")
+    best_val_f1 = 0.0
     best_epoch = 0
 
     epoch_progress = tqdm(
@@ -73,7 +68,9 @@ def train_and_validate(
         leave=False,
         position=1
     )
+
     for epoch in epoch_progress:
+
         model.train()
         running_loss = 0.0
         all_labels, all_probs = [], []
@@ -94,18 +91,13 @@ def train_and_validate(
             epoch_progress.set_postfix(loss=f"{running_loss / (batch_index + 1):.4f}")
 
         train_loss = running_loss / len(train_loader)
-        train_bal_acc, train_auc, train_ap = compute_metrics(
-            np.concatenate(all_labels), np.concatenate(all_probs)
+
+        val_loss, _, val_f1, _, _ = validate_model(
+            model, val_loader, criterion, device
         )
 
-        val_loss, val_bal_acc, val_auc, val_ap = validate_model(model, val_loader, criterion, device)
-
-        for key, value in zip(
-                history.keys(),
-                [train_loss, val_loss, train_bal_acc, val_bal_acc,
-                 train_auc, val_auc, train_ap, val_ap]
-        ):
-            history[key].append(value)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
 
         epoch_progress.set_postfix(
             loss=f"{train_loss:.4f}",
@@ -114,14 +106,14 @@ def train_and_validate(
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
+            best_val_f1 = val_f1
             best_epoch = epoch + 1
             torch.save(model.state_dict(), os.path.join(out_dir, f"best_model_split_{split}.pth"))
-
-    plot_metrics(history, split, out_dir)
 
     return {
         "split": split,
         "best_epoch": best_epoch,
         "best_val_loss": best_val_loss,
-        "history": history
+        "best_val_f1": best_val_f1,
+        "history": history,
     }

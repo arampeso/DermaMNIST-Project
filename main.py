@@ -10,7 +10,7 @@ from src.args import get_args
 from src.dataset import myDataSet
 from src.model import MyModel
 from src.trainer import train_and_validate
-from src.utils import get_device
+from src.utils import get_device, plot_losses
 
 device = get_device()
 args = get_args()
@@ -20,7 +20,7 @@ os.makedirs(args.output_dir, exist_ok=True)
 split_results = []
 split_progress = tqdm(range(5), leave=True, position=0)
 
-# --------------- 1. Train/Val Loop ---------------
+# --------------- Train/Val Loop ---------------
 for split in split_progress:
 
     split_progress.set_description(f"Split {split + 1}/5")
@@ -70,21 +70,30 @@ for split in split_progress:
 
     split_results.append(result)
 
-# --------------- # Save results of all folds ---------------
+# --------------- # Plot loss for all folds ---------------
+plot_losses(split_results, args.output_dir)
+
+# --------------- # Summarize results of all folds ---------------
 results_df = pd.DataFrame(split_results)
 results_path = os.path.join(
     args.output_dir,
     "cross_validation_results.csv"
 )
-summary_df = results_df[["split", "best_epoch", "best_val_loss"]]
+summary_df = results_df[
+    ["split", "best_epoch", "best_val_loss", "best_val_f1"]
+]
 summary_df.to_csv(results_path, index=False)
 
-# --------------- # Print summary ---------------
+# --------------- Print summary ---------------
 mean_val_loss = summary_df["best_val_loss"].mean()
 std_val_loss = summary_df["best_val_loss"].std(ddof=1)
+mean_val_f1 = summary_df["best_val_f1"].mean()
+std_val_f1 = summary_df["best_val_f1"].std(ddof=1)
 
 print("\n========== Cross-Validation Results ==========")
 print(summary_df.to_string(index=False))
 print(f"\nMean best validation loss: {mean_val_loss:.4f}")
 print(f"Standard deviation: {std_val_loss:.4f}")
-print(f"Results table saved: {results_path}\n")
+print(f"\nMean validation macro F1: {mean_val_f1:.4f}")
+print(f"Standard deviation: {std_val_f1:.4f}")
+print(f"\nResults table saved: {results_path}\n")

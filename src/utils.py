@@ -25,34 +25,28 @@ def get_device():
     print(f"Device used: {device}")
     return device
 
-def plot_metrics(history, split, out_dir):
-    """ 
-    Saves one combined plot per split (one subplot per metric,
-    training vs. validation over epochs).
-    """
-    metrics = {
-        "loss": "Loss",
-        "bal_acc": "Balanced Accuracy",
-        "f1": "Macro F1",
-        "auc": "ROC-AUC",
-        "ap": "Average Precision",
-    }
-    epochs = range(1, len(history["train_loss"]) + 1)
+def plot_losses(split_results, out_dir):
+    """Save one figure with training and validation loss for every split."""
+    ncols = 2
+    nrows = (len(split_results) + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(12, 4 * nrows), squeeze=False)
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
-
-    for ax, (key, name) in zip(axes.flatten(), metrics.items()):
-        ax.plot(epochs, history[f"train_{key}"], label="Training")
-        ax.plot(epochs, history[f"val_{key}"], label="Validation")
+    for ax, result in zip(axes.flat, split_results):
+        history = result["history"]
+        epochs = range(1, len(history["train_loss"]) + 1)
+        ax.plot(epochs, history["train_loss"], label="Training")
+        ax.plot(epochs, history["val_loss"], label="Validation")
         ax.set_xlabel("Epoch")
-        ax.set_ylabel(name)
-        ax.set_title(name)
+        ax.set_ylabel("Loss")
+        ax.set_title(f"Split {result['split']}")
         ax.legend()
 
-    axes.flatten()[-1].set_visible(False)
-    fig.suptitle(f"Metrics over Epochs (Split {split})")
+    for ax in list(axes.flat)[len(split_results):]:
+        ax.set_visible(False)
+
+    fig.suptitle("Training and Validation Loss by Split")
     fig.tight_layout()
-    fig.savefig(os.path.join(out_dir, f"metrics_split_{split}.png"))
+    fig.savefig(os.path.join(out_dir, "loss_all_splits.png"))
     plt.close(fig)
 
 
