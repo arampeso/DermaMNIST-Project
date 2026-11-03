@@ -10,7 +10,7 @@ from src.args import get_args
 from src.dataset import myDataSet
 from src.model import MyModel
 from src.utils import get_device, compute_metrics
-from utils import save_confusion_matrix
+from src.utils import save_confusion_matrix
 
 args = get_args()
 device = get_device()
