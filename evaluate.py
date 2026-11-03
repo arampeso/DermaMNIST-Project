@@ -1,17 +1,16 @@
 import os
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from torch.utils.data import DataLoader
 
 from src.args import get_args
 from src.dataset import myDataSet
 from src.model import MyModel
 from src.utils import get_device, compute_metrics
+from utils import save_confusion_matrix
 
 args = get_args()
 device = get_device()
@@ -54,19 +53,6 @@ def evaluate_ensemble(models, test_loader, device):
         "ap": ap,
     }
     return metrics, labels, probs
-
-
-def save_confusion_matrix(labels, probs, path):
-    preds = probs.argmax(axis=1)
-    cm = confusion_matrix(labels, preds)
-
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ConfusionMatrixDisplay(cm).plot(ax=ax, cmap="Blues", colorbar=False)
-    ax.set_title("Ensemble confusion matrix")
-    fig.tight_layout()
-    fig.savefig(path, dpi=200)
-    plt.close(fig)
-    print(f"Confusion matrix saved to {path}")
 
 
 def main():
