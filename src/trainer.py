@@ -1,12 +1,10 @@
 import os
 import numpy as np
 import torch
-import torch.nn as nn
 from tqdm import tqdm
 from src.args import get_args
 from src.utils import compute_metrics
 
-args = get_args()
 
 def validate_model(model, val_loader, criterion, device):
     """ 
@@ -73,7 +71,6 @@ def train_and_validate(
 
         model.train()
         running_loss = 0.0
-        all_labels, all_probs = [], []
 
         for batch_index, batch in enumerate(train_loader):
             inputs = batch["xray"].to(device)
@@ -86,8 +83,6 @@ def train_and_validate(
             optimizer.step()
 
             running_loss += loss.item()
-            all_labels.append(labels.cpu().numpy())
-            all_probs.append(torch.softmax(outputs, dim=1).detach().cpu().numpy())
             epoch_progress.set_postfix(loss=f"{running_loss / (batch_index + 1):.4f}")
 
         train_loss = running_loss / len(train_loader)
