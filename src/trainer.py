@@ -41,10 +41,10 @@ def train_and_validate(
         val_loader,
         criterion,
         optimizer,
-        epochs=args.epochs,
-        split=0,
-        device="cpu",
-        out_dir="sessions"
+        epochs,
+        split,
+        device,
+        out_dir,
 ):
     """ 
     Trains the model, validates after every epoch, saves the best model
@@ -55,11 +55,17 @@ def train_and_validate(
     history = {
         "train_loss": [],
         "val_loss": [],
+        "val_macro_f1": [],
     }
     best_val_loss = float("inf")
-    best_val_f1 = 0.0
+    best_val_f1 = float("-inf")
     best_epoch = 0
-
+    latest_val_loss = None
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer = optimizer,
+        step_size = 5,
+        gamma     = 0.1,
+    )
     epoch_progress = tqdm(
         range(epochs),
         desc=f"Split {split} epochs",
@@ -83,23 +89,34 @@ def train_and_validate(
             optimizer.step()
 
             running_loss += loss.item()
-            epoch_progress.set_postfix(loss=f"{running_loss / (batch_index + 1):.4f}")
+
+            epoch_progress.set_postfix(
+                train_loss=f"{running_loss / (batch_index + 1):.4f}",
+                val_loss=(
+                    f"{latest_val_loss:.4f}"
+                    if latest_val_loss is not None
+                    else "pending"
+                ),
+            )
 
         train_loss = running_loss / len(train_loader)
 
         val_loss, _, val_f1, _, _ = validate_model(
             model, val_loader, criterion, device
         )
+        latest_val_loss = val_loss
+        scheduler.step()
 
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
+        history["val_macro_f1"].append(val_f1)
 
         epoch_progress.set_postfix(
-            loss=f"{train_loss:.4f}",
+            train_loss=f"{train_loss:.4f}",
             val_loss=f"{val_loss:.4f}"
         )
 
-        if val_loss < best_val_loss:
+        if val_f1 > best_val_f1:
             best_val_loss = val_loss
             best_val_f1 = val_f1
             best_epoch = epoch + 1

@@ -26,25 +26,27 @@ def get_device():
     return device
 
 def plot_losses(split_results, out_dir):
-    """Save one figure with training and validation loss for every split."""
-    ncols = 2
-    nrows = (len(split_results) + ncols - 1) // ncols
-    fig, axes = plt.subplots(nrows, ncols, figsize=(12, 4 * nrows), squeeze=False)
+    """Save loss and validation macro-F1 curves for each cross-validation split."""
+    nrows = 5
+    fig, axes = plt.subplots(nrows, 3, figsize=(15, 4 * nrows), squeeze=False)
+    column_titles = ("Training loss", "Validation loss", "Validation macro F1")
 
-    for ax, result in zip(axes.flat, split_results):
+    for column, title in enumerate(column_titles):
+        axes[0, column].set_title(title)
+
+    for row, result in enumerate(sorted(split_results, key=lambda item: item["split"])):
         history = result["history"]
         epochs = range(1, len(history["train_loss"]) + 1)
-        ax.plot(epochs, history["train_loss"], label="Training")
-        ax.plot(epochs, history["val_loss"], label="Validation")
-        ax.set_xlabel("Epoch")
-        ax.set_ylabel("Loss")
-        ax.set_title(f"Split {result['split']}")
-        ax.legend()
+        axes[row, 0].plot(epochs, history["train_loss"])
+        axes[row, 1].plot(epochs, history["val_loss"])
+        axes[row, 2].plot(epochs, history["val_macro_f1"])
 
-    for ax in list(axes.flat)[len(split_results):]:
-        ax.set_visible(False)
+        for column, ylabel in enumerate(("Loss", "Loss", "Macro F1")):
+            axes[row, column].set_ylabel(f"Split {result['split']}\n{ylabel}")
+            axes[row, column].set_xlabel("Epoch")
 
-    fig.suptitle("Training and Validation Loss by Split")
+        axes[row, 2].set_ylim(0, 1)
+
     fig.tight_layout()
     fig.savefig(os.path.join(out_dir, "loss_all_splits.png"))
     plt.close(fig)
