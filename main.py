@@ -34,8 +34,8 @@ for split in split_progress:
 
 
     # --------------- 2. From dataframe to Dataset ---------------
-    train_dataset = myDataSet(train_set)
-    val_dataset = myDataSet(val_set)
+    train_dataset = myDataSet(train_set, should_augment=True)
+    val_dataset = myDataSet(val_set, should_augment=False)
 
     # --------------- 3. Create dataloaders ---------------
     train_loader = DataLoader(
@@ -57,15 +57,15 @@ for split in split_progress:
 
     # --------------- 5. Train and validate model ---------------
     result = train_and_validate(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        criterion=criterion,
-        optimizer=optimizer,
-        epochs=args.epochs,
-        split=split,
-        device=device,
-        out_dir=args.output_dir
+        model       = model,
+        train_loader= train_loader,
+        val_loader  = val_loader,
+        criterion   = criterion,
+        optimizer   = optimizer,
+        epochs      = args.epochs,
+        split       = split,
+        device      = device,
+        out_dir     = args.output_dir
     )
 
     split_results.append(result)
