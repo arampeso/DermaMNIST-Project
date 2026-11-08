@@ -15,8 +15,8 @@ def get_args():
     parser.add_argument("-batch_size", type=int, default=32,
                         choices=[16, 32, 64, 128])
 
-    parser.add_argument("-lr", type=float, default=1e-3,
-                        choices=[1e-4, 1e-3])
+    parser.add_argument("-lr", type=float, default=1e-4,
+                        choices=[1e-5, 1e-4, 1e-3])
 
     parser.add_argument("-wd", type=float, default=1e-5,
                         choices=[1e-5, 1e-7])
