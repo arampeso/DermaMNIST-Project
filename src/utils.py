@@ -74,13 +74,28 @@ def compute_metrics(labels, probs):
     return bal_acc, f1, auc, ap
 
 
-def save_confusion_matrix(labels, probs, path):
+def save_confusion_matrix(labels, probs, class_names, path):
     preds = probs.argmax(axis=1)
-    cm = confusion_matrix(labels, preds)
+    class_ids = np.arange(len(class_names))
+    cm = confusion_matrix(
+        labels,
+        preds,
+        labels=class_ids,
+        normalize="true",
+    )
 
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ConfusionMatrixDisplay(cm).plot(ax=ax, cmap="Blues", colorbar=False)
-    ax.set_title("Ensemble confusion matrix")
+    fig, ax = plt.subplots(figsize=(10, 8))
+    ConfusionMatrixDisplay(cm, display_labels=class_names).plot(
+        ax=ax,
+        cmap="Blues",
+        colorbar=False,
+        values_format=".1%",
+    )
+    ax.set_title("Ensemble confusion matrix (row-normalized)")
+    ax.set_xlabel("Predicted class")
+    ax.set_ylabel("True class")
+    ax.tick_params(axis="x", labelrotation=45)
+    plt.setp(ax.get_xticklabels(), ha="right", rotation_mode="anchor")
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)

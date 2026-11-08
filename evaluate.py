@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from medmnist import INFO
 
 from src.args import get_args
 from src.dataset import myDataSet
@@ -47,6 +49,7 @@ def evaluate_ensemble(models, test_loader, device):
     bal_acc, f1, auc, ap = compute_metrics(labels, probs)
 
     metrics = {
+        "accuracy": accuracy_score(labels, probs.argmax(axis=1)),
         "bal_acc": bal_acc,
         "f1": f1,
         "auc": auc,
@@ -57,7 +60,7 @@ def evaluate_ensemble(models, test_loader, device):
 
 def main():
 
-    model_folder = Path("sessions/")
+    model_folder = Path(args.output_dir)
     model_files = sorted(model_folder.glob("*.pth"))
 
     # --------------- 1. Load test data ---------------
@@ -87,8 +90,35 @@ def main():
     results_df = pd.DataFrame([results]).set_index("model")
     results_df.to_csv(model_folder / "results.csv")
     print(f"Ensemble evaluation results saved to {model_folder / 'results.csv'}")
+    print("\nEnsemble evaluation results:")
+    print(results_df.to_string(float_format=lambda value: f"{value:.4f}"))
 
-    save_confusion_matrix(labels, probs, model_folder / "confusion_matrix.png")
+    class_ids = np.arange(probs.shape[1])
+    class_names = INFO["dermamnist"]["label"]
+    precision, recall, f1, support = precision_recall_fscore_support(
+        labels,
+        probs.argmax(axis=1),
+        labels=class_ids,
+        zero_division=0,
+    )
+    class_metrics = pd.DataFrame({
+        "class_name": [class_names[str(class_id)] for class_id in class_ids],
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "support": support,
+    })
+    class_metrics_path = model_folder / "class_metrics.csv"
+    class_metrics.to_csv(class_metrics_path, index=False)
+    print(f"Per-class metrics saved to {class_metrics_path}")
+
+    ordered_class_names = [class_names[str(class_id)] for class_id in class_ids]
+    save_confusion_matrix(
+        labels,
+        probs,
+        ordered_class_names,
+        model_folder / "confusion_matrix.png",
+    )
     print()
     
 
