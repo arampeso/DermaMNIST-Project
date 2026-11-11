@@ -19,6 +19,10 @@ class myDataSet(Dataset):
                 hue=0.02,
             ),
         ])
+        self.normalization = transforms.Normalize(
+            mean=(0.485, 0.456, 0.406),
+            std=(0.229, 0.224, 0.225),
+        )
 
     def __len__(self):
         return len(self.dataset)
@@ -46,6 +50,8 @@ class myDataSet(Dataset):
 
         if self.should_augment:
             img = self.augmentation(img)
+
+        img = self.normalization(img)
 
         target = int(self.dataset["label"].iloc[idx])
         
