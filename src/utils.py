@@ -10,6 +10,7 @@ from sklearn.metrics import (
 import torch
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 
 def get_device():
     """ Returns the appropriate device (CPU, CUDA, or MPS) based on availability. """
@@ -50,6 +51,28 @@ def plot_losses(split_results, out_dir):
     fig.tight_layout()
     fig.savefig(os.path.join(out_dir, "loss_all_splits.png"))
     plt.close(fig)
+
+
+def summarize_results(split_results, out_dir):
+    """Save and print the cross-validation results and aggregate metrics."""
+    summary_df = pd.DataFrame(split_results)[
+        ["split", "best_epoch", "best_val_loss", "best_val_f1"]
+    ]
+    results_path = os.path.join(out_dir, "cross_validation_results.csv")
+    summary_df.to_csv(results_path, index=False)
+
+    mean_val_loss = summary_df["best_val_loss"].mean()
+    std_val_loss = summary_df["best_val_loss"].std(ddof=1)
+    mean_val_f1 = summary_df["best_val_f1"].mean()
+    std_val_f1 = summary_df["best_val_f1"].std(ddof=1)
+
+    print("\n========== Cross-Validation Results ==========")
+    print(summary_df.to_string(index=False))
+    print(f"\nMean best validation loss: {mean_val_loss:.4f}")
+    print(f"Standard deviation: {std_val_loss:.4f}")
+    print(f"\nMean validation macro F1: {mean_val_f1:.4f}")
+    print(f"Standard deviation: {std_val_f1:.4f}")
+    print(f"\nResults table saved: {results_path}\n")
 
 
 def compute_metrics(labels, probs):

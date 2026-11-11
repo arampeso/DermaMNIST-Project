@@ -12,7 +12,7 @@ from src.args import get_args
 from src.dataset import myDataSet
 from src.model import MyModel
 from src.trainer import train_and_validate
-from src.utils import get_device, plot_losses
+from src.utils import get_device, plot_losses, summarize_results
 
 device = get_device()
 args = get_args()
@@ -92,26 +92,4 @@ for split in split_progress:
 plot_losses(split_results, args.output_dir)
 
 # --------------- # Summarize results of all folds ---------------
-results_df = pd.DataFrame(split_results)
-results_path = os.path.join(
-    args.output_dir,
-    "cross_validation_results.csv"
-)
-summary_df = results_df[
-    ["split", "best_epoch", "best_val_loss", "best_val_f1"]
-]
-summary_df.to_csv(results_path, index=False)
-
-# --------------- Print summary ---------------
-mean_val_loss = summary_df["best_val_loss"].mean()
-std_val_loss = summary_df["best_val_loss"].std(ddof=1)
-mean_val_f1 = summary_df["best_val_f1"].mean()
-std_val_f1 = summary_df["best_val_f1"].std(ddof=1)
-
-print("\n========== Cross-Validation Results ==========")
-print(summary_df.to_string(index=False))
-print(f"\nMean best validation loss: {mean_val_loss:.4f}")
-print(f"Standard deviation: {std_val_loss:.4f}")
-print(f"\nMean validation macro F1: {mean_val_f1:.4f}")
-print(f"Standard deviation: {std_val_f1:.4f}")
-print(f"\nResults table saved: {results_path}\n")
+summarize_results(split_results, args.output_dir)
