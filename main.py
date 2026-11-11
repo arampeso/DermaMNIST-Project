@@ -1,10 +1,12 @@
 import os
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
+from src.prepare_data import SEED
 
 from src.args import get_args
 from src.dataset import myDataSet
@@ -38,10 +40,26 @@ for split in split_progress:
     val_dataset = myDataSet(val_set, should_augment=False)
 
     # --------------- 3. Create dataloaders ---------------
+    labels = train_set["label"].to_numpy()
+    _, label_indices, class_counts = np.unique(
+        labels,
+        return_inverse=True,
+        return_counts=True,
+    )
+    sample_weights = torch.as_tensor(
+        1.0 / (class_counts[label_indices]),
+        dtype=torch.double)
+    
+    sampler = WeightedRandomSampler(
+        weights=sample_weights,
+        num_samples=len(sample_weights),
+        replacement=True,
+        generator=torch.Generator().manual_seed(SEED + split))
+    
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
-        shuffle=True)
+        sampler=sampler)
     
     val_loader = DataLoader(
         val_dataset,
