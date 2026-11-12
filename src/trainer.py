@@ -7,9 +7,9 @@ from src.utils import compute_metrics
 
 
 def validate_model(model, val_loader, criterion, device):
-    """ 
-    Validates the model on the validation set and returns:
-    Loss, balanced accuracy, macro F1, ROC-AUC and average precision.
+    """Evaluate the model on the validation set and calculate its metrics.
+
+    Return: Validation loss, balanced accuracy, macro F1, ROC-AUC, and average precision.
     """
     model.eval()
     running_loss = 0.0
@@ -46,9 +46,9 @@ def train_and_validate(
         device,
         out_dir,
 ):
-    """ 
-    Trains the model, validates after every epoch, saves the best model
-    and returns its loss history.
+    """Train and validate the model each epoch, saving the checkpoint with the best macro F1.
+
+    Return: A dictionary containing the best validation metrics, epoch, split, and loss history.
     """
     os.makedirs(out_dir, exist_ok=True)
 

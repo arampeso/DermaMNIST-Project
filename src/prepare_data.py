@@ -7,7 +7,7 @@ from PIL import Image
 from medmnist import DermaMNIST
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
-
+SPLITS = 5
 SEED = 59
 IMAGE_SIZE = 128  # Alternatively: 28, 128, or 224
 
@@ -17,7 +17,10 @@ SPLIT_DIR = DATA_DIR / "splits"
 
 
 def prepare_directories():
-    """Create the required directories and optionally clean old outputs."""
+    """Create the data directories and remove existing generated images and split files.
+
+    Return: None.
+    """
     IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     SPLIT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -29,7 +32,10 @@ def prepare_directories():
 
 
 def load_dataset():
-    """Download and combine the official dataset splits."""
+    """Download and combine the official DermaMNIST training, validation, and test splits.
+
+    Return: A tuple containing the combined images and integer labels.
+    """
     datasets = [
         DermaMNIST(split=split, download=True, size=IMAGE_SIZE)
         for split in ("train", "val", "test")
@@ -49,7 +55,10 @@ def load_dataset():
 
 
 def save_images(images):
-    """Save all images as consecutively numbered PNG files."""
+    """Save images as consecutively numbered PNG files in the image directory.
+
+    Return: A list of saved image filenames.
+    """
     names = []
 
     for index, image_array in enumerate(images, start=1):
@@ -63,9 +72,9 @@ def save_images(images):
 
 
 def write_csv(filename, indices, names, labels):
-    """
-    Write a CSV file with the columns:
-    path, name, label
+    """Write the selected image paths, filenames, and labels to a split CSV file.
+
+    Return: None.
     """
     csv_path = SPLIT_DIR / filename
 
@@ -86,8 +95,6 @@ def write_csv(filename, indices, names, labels):
                 int(labels[index]),
             ])
 
-    print(f"Created: {csv_path} ({len(indices)} images)")
-
 
 def main():
     prepare_directories()
@@ -96,7 +103,7 @@ def main():
     images, labels = load_dataset()
 
     print(f"Total images: {len(images)}")
-    print(f"Classes: {np.unique(labels).tolist()}")
+    print(f"Classes: {len(np.unique(labels))}")
 
     names = save_images(images)
 
@@ -122,7 +129,7 @@ def main():
     dev_labels = labels[dev_indices]
 
     cross_validator = StratifiedKFold(
-        n_splits=5,
+        n_splits=SPLITS,
         shuffle=True,
         random_state=SEED,
     )
@@ -146,8 +153,10 @@ def main():
             names,
             labels,
         )
-
+    
     print("\nDataset preparation complete!")
+    print(f"\nSplit amount: {SPLITS}")
+
     print(f"Total images: {len(images)}")
     print(f"Development images: {len(dev_indices)}")
     print(f"Test images: {len(test_indices)}")

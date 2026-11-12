@@ -5,7 +5,16 @@ import numpy as np
 from torchvision import transforms
 
 class myDataSet(Dataset):
+    """Load, augment, and normalize labeled lesion images from a tabular dataset.
+
+    Return: None.
+    """
+
     def __init__(self, dataset, should_augment=False):
+        """Store the image records and configure optional augmentation and normalization.
+
+        Return: None.
+        """
         self.dataset = dataset
         self.should_augment = should_augment
 
@@ -25,9 +34,17 @@ class myDataSet(Dataset):
         )
 
     def __len__(self):
+        """Get the number of image records in the dataset.
+
+        Return: The number of records as an integer.
+        """
         return len(self.dataset)
 
     def __getitem__(self, idx):
+        """Load and preprocess one image and retrieve its label and filename.
+
+        Return: A dictionary containing the image tensor, filename, and integer target tensor.
+        """
         path = self.dataset["path"].iloc[idx]
 
         # Load PNG as a color image

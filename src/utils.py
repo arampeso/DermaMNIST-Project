@@ -13,7 +13,10 @@ import os
 import pandas as pd
 
 def get_device():
-    """ Returns the appropriate device (CPU, CUDA, or MPS) based on availability. """
+    """Select the available compute device, preferring MPS and then CUDA.
+
+    Return: The selected PyTorch device.
+    """
     if torch.backends.mps.is_available():
         device = torch.device("mps")
 
@@ -27,7 +30,10 @@ def get_device():
     return device
 
 def plot_losses(split_results, out_dir):
-    """Save loss and validation macro-F1 curves for each cross-validation split."""
+    """Plot and save training loss, validation loss, and macro-F1 curves for each split.
+
+    Return: None.
+    """
     nrows = 5
     fig, axes = plt.subplots(nrows, 3, figsize=(15, 4 * nrows), squeeze=False)
     column_titles = ("Training loss", "Validation loss", "Validation macro F1")
@@ -54,7 +60,10 @@ def plot_losses(split_results, out_dir):
 
 
 def summarize_results(split_results, out_dir):
-    """Save and print the cross-validation results and aggregate metrics."""
+    """Save the per-split cross-validation results and print aggregate metrics.
+
+    Return: None.
+    """
     summary_df = pd.DataFrame(split_results)[
         ["split", "best_epoch", "best_val_loss", "best_val_f1"]
     ]
@@ -76,9 +85,9 @@ def summarize_results(split_results, out_dir):
 
 
 def compute_metrics(labels, probs):
-    """
-    Computes balanced accuracy, macro F1, ROC-AUC and average precision.
-    labels: (N,) int array, probs: (N, C) softmax probabilities.
+    """Calculate balanced accuracy, macro F1, ROC-AUC, and average precision.
+
+    Return: A tuple containing balanced accuracy, macro F1, ROC-AUC, and average precision.
     """
     preds = probs.argmax(axis=1)
     bal_acc = balanced_accuracy_score(labels, preds)
@@ -98,6 +107,10 @@ def compute_metrics(labels, probs):
 
 
 def save_confusion_matrix(labels, probs, class_names, path):
+    """Create and save a row-normalized confusion matrix plot.
+
+    Return: None.
+    """
     preds = probs.argmax(axis=1)
     class_ids = np.arange(len(class_names))
     cm = confusion_matrix(

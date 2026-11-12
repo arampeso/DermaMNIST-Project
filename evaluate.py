@@ -19,9 +19,9 @@ device = get_device()
 
 
 def evaluate_ensemble(models, test_loader, device):
-    """
-    Evaluates the ensemble (mean of the softmax probabilities of all models)
-    on the test set and returns the metrics together with labels and probabilities.
+    """Evaluate an ensemble by averaging its models' softmax probabilities on the test set.
+
+    Return: A tuple containing the metrics dictionary, true labels, and ensemble probabilities.
     """
     for model in models:
         model.eval()
@@ -110,7 +110,7 @@ def main():
     })
     class_metrics_path = model_folder / "class_metrics.csv"
     class_metrics.to_csv(class_metrics_path, index=False)
-    print(f"Per-class metrics saved to {class_metrics_path}")
+    print(f"\nPer-class metrics saved to {class_metrics_path}")
 
     ordered_class_names = [class_names[str(class_id)] for class_id in class_ids]
     save_confusion_matrix(

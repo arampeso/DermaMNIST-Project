@@ -4,7 +4,16 @@ import torchvision.models as models
 
 
 class CustomCNN(nn.Module):
+    """Define a compact convolutional neural network for seven-class image classification.
+
+    Return: None.
+    """
+
     def __init__(self, num_classes=7):
+        """Initialize the convolutional feature extractor and classification head.
+
+        Return: None.
+        """
         super().__init__()
 
         # Input: (N, 3, 64, 64)
@@ -56,12 +65,25 @@ class CustomCNN(nn.Module):
         )
 
     def forward(self, x):
+        """Extract image features and predict class logits.
+
+        Return: A tensor of class logits with shape (batch_size, num_classes).
+        """
         x = self.features(x)
         return self.classifier(x)
 
 
 class MyModel(torch.nn.Module):
+    """Provide a seven-class model using a supported ResNet backbone or the custom CNN.
+
+    Return: None.
+    """
+
     def __init__(self, backbone="resnet18", pretrained=True):
+        """Initialize the selected backbone and configure its seven-class output layer.
+
+        Return: None.
+        """
         super().__init__()
 
         if backbone == "custom":
@@ -93,4 +115,8 @@ class MyModel(torch.nn.Module):
         self.model.fc = nn.Linear(in_features, 7)
 
     def forward(self, x):
+        """Run a batch of images through the selected model.
+
+        Return: A tensor of seven class logits for each input image.
+        """
         return self.model(x)
