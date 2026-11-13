@@ -60,7 +60,7 @@ for split in split_progress:
         return_counts=True,
     )
     sample_weights = torch.as_tensor(
-        1.0 / (class_counts[label_indices]),
+        1.0 / np.sqrt(class_counts[label_indices]),
         dtype=torch.double)
     
     sampler = WeightedRandomSampler(
