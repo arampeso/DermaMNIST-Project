@@ -1,4 +1,8 @@
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     average_precision_score,
@@ -8,9 +12,6 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 import torch
-import matplotlib.pyplot as plt
-import os
-import pandas as pd
 
 def get_device():
     """Select the available compute device, preferring MPS and then CUDA.
@@ -55,7 +56,7 @@ def plot_losses(split_results, out_dir):
         axes[row, 2].set_ylim(0, 1)
 
     fig.tight_layout()
-    fig.savefig(os.path.join(out_dir, "loss_all_splits.png"))
+    fig.savefig(Path(out_dir) / "loss_all_splits.png")
     plt.close(fig)
 
 
@@ -67,7 +68,7 @@ def summarize_results(split_results, out_dir):
     summary_df = pd.DataFrame(split_results)[
         ["split", "best_epoch", "best_val_loss", "best_val_f1"]
     ]
-    results_path = os.path.join(out_dir, "cross_validation_results.csv")
+    results_path = Path(out_dir) / "cross_validation_results.csv"
     summary_df.to_csv(results_path, index=False)
 
     mean_val_loss = summary_df["best_val_loss"].mean()

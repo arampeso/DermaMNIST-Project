@@ -1,8 +1,8 @@
-import os
+from pathlib import Path
+
 import numpy as np
 import torch
 from tqdm import tqdm
-from src.args import get_args
 from src.utils import compute_metrics
 
 
@@ -17,7 +17,7 @@ def validate_model(model, val_loader, criterion, device):
 
     with torch.no_grad():
         for batch in val_loader:
-            inputs = batch["xray"].to(device)
+            inputs = batch["image"].to(device)
             labels = batch["target"].to(device)
 
             outputs = model(inputs)
@@ -50,7 +50,8 @@ def train_and_validate(
 
     Return: A dictionary containing the best validation metrics, epoch, split, and loss history.
     """
-    os.makedirs(out_dir, exist_ok=True)
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     history = {
         "train_loss": [],
@@ -79,7 +80,7 @@ def train_and_validate(
         running_loss = 0.0
 
         for batch_index, batch in enumerate(train_loader):
-            inputs = batch["xray"].to(device)
+            inputs = batch["image"].to(device)
             labels = batch["target"].to(device)
 
             optimizer.zero_grad()
@@ -120,7 +121,7 @@ def train_and_validate(
             best_val_loss = val_loss
             best_val_f1 = val_f1
             best_epoch = epoch + 1
-            torch.save(model.state_dict(), os.path.join(out_dir, f"best_model_split_{split}.pth"))
+            torch.save(model.state_dict(), out_dir / f"best_model_split_{split}.pth")
 
     return {
         "split": split,

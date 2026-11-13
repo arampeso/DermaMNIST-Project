@@ -1,18 +1,16 @@
-import os
 from pathlib import Path
 
+from medmnist import INFO
 import numpy as np
 import pandas as pd
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 import torch
 from torch.utils.data import DataLoader
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-from medmnist import INFO
 
 from src.args import get_args
 from src.dataset import myDataSet
 from src.model import MyModel
-from src.utils import get_device, compute_metrics
-from src.utils import save_confusion_matrix
+from src.utils import compute_metrics, get_device, save_confusion_matrix
 
 args = get_args()
 device = get_device()
@@ -30,7 +28,7 @@ def evaluate_ensemble(models, test_loader, device):
 
     with torch.no_grad():
         for batch in test_loader:
-            inputs = batch["xray"].to(device)
+            inputs = batch["image"].to(device)
             labels = batch["target"].to(device)
 
             batch_probs = []
@@ -64,7 +62,7 @@ def main():
     model_files = sorted(model_folder.glob("*.pth"))
 
     # --------------- 1. Load test data ---------------
-    test_set = pd.read_csv(os.path.join(args.split_dir, "test.csv"))
+    test_set = pd.read_csv(Path(args.split_dir) / "test.csv")
 
     # --------------- 2. From dataframe to Dataset ---------------
     test_dataset = myDataSet(test_set)
@@ -95,6 +93,7 @@ def main():
 
     class_ids = np.arange(probs.shape[1])
     class_names = INFO["dermamnist"]["label"]
+    ordered_class_names = [class_names[str(class_id)] for class_id in class_ids]
     precision, recall, f1, support = precision_recall_fscore_support(
         labels,
         probs.argmax(axis=1),
@@ -102,7 +101,7 @@ def main():
         zero_division=0,
     )
     class_metrics = pd.DataFrame({
-        "class_name": [class_names[str(class_id)] for class_id in class_ids],
+        "class_name": ordered_class_names,
         "precision": precision,
         "recall": recall,
         "f1": f1,
@@ -112,7 +111,6 @@ def main():
     class_metrics.to_csv(class_metrics_path, index=False)
     print(f"\nPer-class metrics saved to {class_metrics_path}")
 
-    ordered_class_names = [class_names[str(class_id)] for class_id in class_ids]
     save_confusion_matrix(
         labels,
         probs,

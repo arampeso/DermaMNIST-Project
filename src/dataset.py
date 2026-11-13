@@ -1,7 +1,7 @@
-from torch.utils.data import Dataset
 import cv2
-import torch
 import numpy as np
+import torch
+from torch.utils.data import Dataset
 from torchvision import transforms
 
 class myDataSet(Dataset):
@@ -75,7 +75,7 @@ class myDataSet(Dataset):
         name = self.dataset["name"].iloc[idx]
 
         return {
-            "xray": img,
+            "image": img,
             "name": name,
             "target": torch.tensor(target, dtype=torch.long),
         }

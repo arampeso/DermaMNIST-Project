@@ -1,10 +1,10 @@
 
-from pathlib import Path
 import csv
+from pathlib import Path
 
+from medmnist import DermaMNIST
 import numpy as np
 from PIL import Image
-from medmnist import DermaMNIST
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
 SPLITS = 5

@@ -1,4 +1,6 @@
-import os
+import random
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch
@@ -6,18 +8,24 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
-from src.prepare_data import SEED
 
 from src.args import get_args
 from src.dataset import myDataSet
 from src.model import MyModel
+from src.prepare_data import SEED
 from src.trainer import train_and_validate
 from src.utils import get_device, plot_losses, summarize_results
+
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
 
 device = get_device()
 args = get_args()
 
-os.makedirs(args.output_dir, exist_ok=True)
+split_dir = Path(args.split_dir)
+output_dir = Path(args.output_dir)
+output_dir.mkdir(parents=True, exist_ok=True)
 
 split_results = []
 split_progress = tqdm(range(5), leave=True, position=0)
@@ -28,11 +36,9 @@ for split in split_progress:
     split_progress.set_description(f"Split {split + 1}/5")
 
     # --------------- 1. Load specific fold data ---------------
-    train_set = pd.read_csv(
-        os.path.join(args.split_dir, f"split_{split}_train.csv"))
+    train_set = pd.read_csv(split_dir / f"split_{split}_train.csv")
     
-    val_set = pd.read_csv(
-        os.path.join(args.split_dir, f"split_{split}_val.csv"))
+    val_set = pd.read_csv(split_dir / f"split_{split}_val.csv")
 
     # --------------- 1b. Subsample majority class (train only) ---------------
     majority_label = train_set["label"].value_counts().idxmax()
@@ -94,13 +100,13 @@ for split in split_progress:
         epochs      = args.epochs,
         split       = split,
         device      = device,
-        out_dir     = args.output_dir
+        out_dir     = output_dir
     )
 
     split_results.append(result)
 
 # --------------- # Plot loss for all folds ---------------
-plot_losses(split_results, args.output_dir)
+plot_losses(split_results, output_dir)
 
 # --------------- # Summarize results of all folds ---------------
-summarize_results(split_results, args.output_dir)
+summarize_results(split_results, output_dir)
