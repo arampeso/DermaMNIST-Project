@@ -34,6 +34,19 @@ for split in split_progress:
     val_set = pd.read_csv(
         os.path.join(args.split_dir, f"split_{split}_val.csv"))
 
+    # --------------- 1b. Subsample majority class (train only) ---------------
+    majority_label = train_set["label"].value_counts().idxmax()
+    majority = train_set[train_set["label"] == majority_label]
+    minority = train_set[train_set["label"] != majority_label]
+
+    majority = majority.sample(
+        frac=0.25,
+        random_state=SEED + split)
+
+    train_set = (
+        pd.concat([majority, minority])
+        .sample(frac=1.0, random_state=SEED + split)
+        .reset_index(drop=True))
 
     # --------------- 2. From dataframe to Dataset ---------------
     train_dataset = myDataSet(train_set, should_augment=True)
@@ -66,9 +79,7 @@ for split in split_progress:
         batch_size=args.batch_size,
         shuffle=False)
 
-
     # --------------- 4. Create model, loss function, and optimizer ---------------
-
     model = MyModel(backbone=args.backbone).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
